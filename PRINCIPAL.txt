@@ -1,0 +1,235 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+
+class Fighter {
+private:
+    string name;
+    string description;
+    int maxHealth;
+    int currentHealth;
+    int maxAttack;
+    int pointsEarned;
+    bool selected;
+
+public:
+    Fighter(string n = "", string desc = "", int maxHP = 0, int maxAtk = 0) {
+        name = n;
+        description = desc;
+        maxHealth = maxHP;
+        currentHealth = maxHP;
+        maxAttack = maxAtk;
+        pointsEarned = 0;
+        selected = false;
+    }
+
+    bool isAlive() {
+        return currentHealth > 0;
+    }
+
+    int getHealthPercentage() {
+        return (currentHealth * 100) / maxHealth;
+    }
+
+    void printHealthBar() {
+        int healthPercentage = getHealthPercentage();
+        int filledBars = healthPercentage / 5;
+        int emptyBars = 20 - filledBars;
+
+        cout << name << endl;
+        cout << "Health: ";
+
+        for (int i = 0; i < filledBars; i++)
+            cout << "%";
+
+        for (int i = 0; i < emptyBars; i++)
+            cout << "=";
+
+        cout << endl;
+    }
+
+    void takeDamage(int damage) {
+        currentHealth -= damage;
+        if (currentHealth < 0)
+            currentHealth = 0;
+    }
+
+    bool isSelected() {
+        return selected;
+    }
+
+    void select() {
+        selected = true;
+    }
+
+    void deselect() {
+        selected = false;
+    }
+
+    void saveFighterData(ofstream& file) {
+        file << name << " " << description << " " << maxHealth << " " << maxAttack << endl;
+    }
+};
+
+void displayMenu() {
+    cout << "======= MENU =======\n";
+    cout << "1. Attack\n";
+    cout << "2. View Health\n";
+    cout << "3. View Points Earned\n";
+    cout << "4. Register Information\n";
+    cout << "5. Save Fighter Data\n";
+    cout << "6. Select Fighter\n";
+    cout << "7. Exit\n";
+    cout << "====================\n";
+}
+
+void performAttack(Fighter& player, Fighter& enemy) {
+    int playerAttack = rand() % player.getMaxAttack() + 1;
+    int enemyAttack = rand() % enemy.getMaxAttack() + 1;
+
+    enemy.takeDamage(playerAttack);
+    player.takeDamage(enemyAttack);
+
+    if (!enemy.isAlive()) {
+        player.incrementPointsEarned();
+        cout << "Enemy defeated! You earned points.\n";
+    }
+
+    cout << "Player attacked with " << playerAttack << " damage.\n";
+    cout << "Enemy attacked with " << enemyAttack << " damage.\n";
+}
+
+void loadFighters(Fighter fighters[], int size) {
+    ifstream file("fighters.txt");
+    if (!file) {
+        cout << "Error opening file. Fighters data could not be loaded.\n";
+        return;
+    }
+
+    string name, description;
+    int maxHealth, maxAttack;
+    int count = 0;
+
+    while (count < size && file >> name >> description >> maxHealth >> maxAttack) {
+        fighters[count] = Fighter(name, description, maxHealth, maxAttack);
+        count++;
+    }
+
+    file.close();
+
+    cout << "Fighters data loaded successfully.\n";
+}
+
+void registerInformation(Fighter& player) {
+    string name, description;
+    int maxHealth, maxAttack;
+
+    cout << "Enter fighter name: ";
+    cin.ignore();
+    getline(cin, name);
+    cout << "Enter fighter description: ";
+    getline(cin, description);
+    cout << "Enter maximum health: ";
+    cin >> maxHealth;
+    cout << "Enter maximum attack: ";
+    cin >> maxAttack;
+
+    player = Fighter(name, description, maxHealth, maxAttack);
+
+    cout << "Fighter information registered successfully.\n";
+}
+
+void saveFighterData(Fighter fighters[], int size) {
+    ofstream file("fighters.txt");
+    if (!file) {
+        cout << "Error creating file. Fighter data could not be saved.\n";
+        return;
+    }
+
+    for (int i = 0; i < size; i++) {
+        fighters[i].saveFighterData(file);
+    }
+
+    file.close();
+
+    cout << "Fighter data saved successfully.\n";
+}
+
+void displayFighterCatalog(Fighter fighters[], int size) {
+    cout << "======= FIGHTER CATALOG =======\n";
+    for (int i = 0; i < size; i++) {
+        cout << "Fighter " << i + 1 << ":\n";
+        fighters[i].printHealthBar();
+        cout << endl;
+    }
+    cout << "==============================\n";
+}
+
+void selectFighter(Fighter fighters[], int size) {
+    int choice;
+    displayFighterCatalog(fighters, size);
+    cout << "Select a fighter (1-" << size << "): ";
+    cin >> choice;
+
+    if (choice >= 1 && choice <= size) {
+        for (int i = 0; i < size; i++) {
+            if (i == choice - 1)
+                fighters[i].select();
+            else
+                fighters[i].deselect();
+        }
+        cout << "Fighter selected successfully.\n";
+    } else {
+        cout << "Invalid choice. Please try again.\n";
+    }
+}
+
+int main() {
+    const int numFighters = 5;
+    Fighter fighters[numFighters];
+    loadFighters(fighters, numFighters);
+
+    Fighter player; // Declare the player fighter
+
+    int choice;
+    while (true) {
+        displayMenu();
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                // Perform attack
+                if (player.isSelected()) {
+                    // Find a random enemy fighter
+                    Fighter* enemy = nullptr;
+                    while (enemy == nullptr || !enemy->isAlive()) {
+                        int randomIndex = rand() % numFighters;
+                        enemy = &fighters[randomIndex];
+                    }
+                    performAttack(player, *enemy);
+                } else {
+                    cout << "Please select a fighter before attacking.\n";
+                }
+                break;
+            case 2:
+                // View health
+                if (player.isSelected()) {
+                    player.printHealthBar();
+                } else {
+                    cout << "Please select a fighter to view health.\n";
+                }
+                break;
+            case 3:
+                // View points earned
+                cout << "Points Earned: " << player.getPointsEarned() << endl;
+                break;
+            case 4:
+                // Register information
+                registerInformation(player);
+                break;
+            case 5:
+                // Save fighter data
+                saveFighterData(fighters, num

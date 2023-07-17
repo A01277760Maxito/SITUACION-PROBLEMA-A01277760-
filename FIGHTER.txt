@@ -1,0 +1,60 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Fighter {
+private:
+    string name;
+    string description;
+    int maxHealth;
+    int currentHealth;
+    int maxAttack;
+    int pointsEarned;
+
+public:
+    Fighter(string n, string desc, int maxHP, int maxAtk) {
+        name = n;
+        description = desc;
+        maxHealth = maxHP;
+        currentHealth = maxHP;
+        maxAttack = maxAtk;
+        pointsEarned = 0;
+    }
+
+    bool isAlive() {
+        return currentHealth > 0;
+    }
+
+    int getHealthPercentage() {
+        return (currentHealth * 100) / maxHealth;
+    }
+
+    void printHealthBar() {
+        int healthPercentage = getHealthPercentage();
+        int filledBars = healthPercentage / 5;
+        int emptyBars = 20 - filledBars;
+
+        cout << name << endl;
+        cout << "Health: ";
+
+        for (int i = 0; i < filledBars; i++)
+            cout << "%";
+
+        for (int i = 0; i < emptyBars; i++)
+            cout << "=";
+
+        cout << endl;
+    }
+
+    // Other member functions and data as needed
+};
+
+int main() {
+    Fighter player("Player", "The main character", 100, 50);
+    player.printHealthBar();
+
+    // Other menu options and game logic can be implemented here
+
+    return 0;
+}
